@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="30dp"
-        android:text="(اختر اللغة الملائم)-👉🤝👌✋"
+        android:text="(اختر اللغة الملائم)👉🤝👌✋"
         android:textColor="#66EAB1"
         android:layout_marginTop="60dp"/>
     <Button
