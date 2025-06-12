@@ -13,8 +13,10 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="50dp"
-        android:text=""
+        android:textSize="30dp"
+        android:text="(اختر اللغة الملائم)-👉🤝👌✋"
+        android:textColor="#66EAB1"
+        android:layout_marginTop="60dp"/>
     <Button
         android:layout_gravity="center"
         android:layout_width="300dp"
@@ -41,4 +43,3 @@
 </LinearLayout>
 
 
-</LinearLayout>
