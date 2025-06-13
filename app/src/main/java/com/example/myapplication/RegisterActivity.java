@@ -22,6 +22,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -36,7 +38,7 @@ public class RegisterActivity extends AppCompatActivity {
     TextView mLoginBtn;
     FirebaseAuth fAuth;
     ProgressBar progressBar;
-    FirebaseFirestore fStore;
+    DatabaseReference databaseReference;
     String userID;
 
 
@@ -55,7 +57,7 @@ public class RegisterActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
 
         fAuth = FirebaseAuth.getInstance();
-         fStore = FirebaseFirestore.getInstance();
+         databaseReference = FirebaseDatabase.getInstance().getReference("Users");
 
         mRegisterBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,7 +95,6 @@ public class RegisterActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()){
                             Toast.makeText(RegisterActivity.this, "User Create", Toast.LENGTH_SHORT).show();
-                            startActivitySecond();
 
                             // Send Verification code
                             FirebaseUser fuser = fAuth.getCurrentUser();
@@ -110,26 +111,13 @@ public class RegisterActivity extends AppCompatActivity {
                             });
 
                             userID = fAuth.getCurrentUser().getUid();
-                            DocumentReference documentReference = fStore.collection("users").document(userID);
-                            Map<String,Object> user = new HashMap<>();
-                            user.put("fName",fullName);
-                            user.put("email",email);
-                            documentReference.set(user).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void aVoid) {
-                                    Log.d(TAG, "onSuccess: user Profile is created for  " + userID);
-                                }
-                            }).addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Log.d(TAG, "onFailure: " + e.toString());
-                                }
-                            });
-
+                            User user = new User(fullName,email,userID);
+                            databaseReference.child(userID).setValue(user);
                         }else {
                             Toast.makeText(RegisterActivity.this, "Error !" + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                             progressBar.setVisibility(View.GONE);
                         }
+                        startActivitySecond();
 
                     }
                 });

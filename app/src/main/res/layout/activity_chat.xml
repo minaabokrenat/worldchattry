@@ -34,7 +34,7 @@
         android:backgroundTint="#B2EFD5"
         android:textSize="50dp"
         android:layout_marginTop="50dp"
-         android:text="hi"
+        android:text="hi"
         />
 
 

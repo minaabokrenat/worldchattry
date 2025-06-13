@@ -13,12 +13,18 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -32,8 +38,8 @@ public class MainActivity extends Activity {
  TextView Memail;
  ImageView src;
 FirebaseAuth fAuth;
-FirebaseFirestore firestore;
 String userID;
+DatabaseReference databaseReference;
 
 //المضاف
 private static final int REQUEST_CAMERA = 100;
@@ -57,20 +63,21 @@ private static final int REQUEST_CAMERA = 100;
         Memail=findViewById(R.id.mEmail);
         src=findViewById(R.id.src);
          fAuth=FirebaseAuth.getInstance();
-         firestore=FirebaseFirestore.getInstance();
+         databaseReference = FirebaseDatabase.getInstance().getReference("Users");
+
         userID = fAuth.getCurrentUser().getUid();
 
-
-        DocumentReference documentReference=firestore.collection("users").document(userID);
-        documentReference.addSnapshotListener(this, new EventListener<DocumentSnapshot>() {
+        databaseReference.child(userID).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
             @Override
-            public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException error) {
-                if(documentSnapshot.exists()){
-                 Mname.setText(documentSnapshot.getString("fName"));
-                 Memail.setText(documentSnapshot.getString("email"));
-                }else{
+            public void onComplete(@NonNull Task<DataSnapshot> task) {
+                if( task.isSuccessful()){
+                    DataSnapshot data = task.getResult();
+                    User user = data.getValue(User.class);
+                    Log.d("tag" ,"onComplete: "+user + " ");
+                    Mname.setText(user.getName());
+                    Memail.setText(user.getEmail());
+                }else
                     Log.d("tag" ,"onEvent:Document do not exists ");
-                }
             }
         });
 
@@ -91,7 +98,7 @@ private static final int REQUEST_CAMERA = 100;
         continu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent f=new Intent(MainActivity.this, Chat.class);
+                Intent f=new Intent(MainActivity.this, UsersActivity.class);
                 startActivity(f);
                 finish();
             }
