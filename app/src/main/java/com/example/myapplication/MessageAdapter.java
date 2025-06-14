@@ -1,5 +1,8 @@
 package com.example.myapplication;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,10 +74,10 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             holder.messageText.setVisibility(View.GONE);
             holder.messageImage.setVisibility(View.VISIBLE);
             // Load image using Glide
-            Glide.with(holder.itemView.getContext())
-                    .load(message.getMessage())
-                    .centerCrop()
-                    .into(holder.messageImage);
+            byte[] decodedString = Base64.decode(message.getMessage(), Base64.DEFAULT);
+            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            holder.messageImage.setImageBitmap(decodedByte);
+
         }
     }
 
@@ -88,6 +91,8 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             holder.messageText.setVisibility(View.GONE);
             holder.messageImage.setVisibility(View.VISIBLE);
             // Load image using Glide
+            byte[] decodedString = Base64.decode(message.getMessage(), Base64.DEFAULT);
+            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
             Glide.with(holder.itemView.getContext())
                     .load(message.getMessage())
                     .centerCrop()

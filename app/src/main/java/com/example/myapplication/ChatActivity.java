@@ -1,6 +1,8 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -11,6 +13,9 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,11 +36,16 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class ChatActivity extends AppCompatActivity {
+    private static final int MAX_IMAGE_SIZE = 800; // Maximum width or height in pixels
+    private static final int COMPRESSION_QUALITY = 80; // JPEG compression quality (0-100)
+
     private static final int PICK_IMAGE_REQUEST = 1;
 
     private RecyclerView messagesRecyclerView;
@@ -52,7 +62,30 @@ public class ChatActivity extends AppCompatActivity {
     private DatabaseReference dbr;
     private String receiverUserId;
     private String receiverUserName;
-
+    private final ActivityResultLauncher<String> imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            new ActivityResultCallback<Uri>() {
+                @Override
+                public void onActivityResult(Uri uri) {
+                    if (uri != null) {
+                        Uri imageUri = uri;
+                        try {
+                            Bitmap bitmap = MediaStore.Images.Media.getBitmap(ChatActivity.this.getContentResolver(), imageUri);
+                            Bitmap resizedBitmap = resizeImage(bitmap);
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, COMPRESSION_QUALITY, baos);
+                            byte[] imageData = baos.toByteArray();
+                            String base64Image = android.util.Base64.encodeToString(imageData, android.util.Base64.DEFAULT);
+                            Message message = new Message(base64Image, currentUser.getUid(), receiverUserId, Message.TYPE_IMAGE);
+                            uploadImage(message);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            Toast.makeText(ChatActivity.this, "Failed to load image", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+            }
+    );
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -126,22 +159,51 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+        imagePickerLauncher.launch("image/*");
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
-            Uri imageUri = data.getData();
-            if (imageUri != null) {
-                uploadImage(imageUri);
-            }
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
+//            Uri imageUri = data.getData();
+//            if (imageUri != null) {
+//                uploadImage(imageUri);
+//            }
+//        }
+//    }
+
+    private Bitmap resizeImage(Bitmap originalBitmap) {
+        int width = originalBitmap.getWidth();
+        int height = originalBitmap.getHeight();
+
+        float scale = 1.0f;
+
+        // Calculate scale factor if image is larger than MAX_IMAGE_SIZE
+        if (width > height && width > MAX_IMAGE_SIZE) {
+            scale = (float) MAX_IMAGE_SIZE / width;
+        } else if (height > width && height > MAX_IMAGE_SIZE) {
+            scale = (float) MAX_IMAGE_SIZE / height;
         }
+
+        // If no resizing is needed, return original
+        if (scale == 1.0f) {
+            return originalBitmap;
+        }
+
+        Matrix matrix = new Matrix();
+        matrix.postScale(scale, scale);
+
+        return Bitmap.createBitmap(
+                originalBitmap,
+                0, 0,
+                width, height,
+                matrix,
+                true
+        );
     }
 
-    private void uploadImage(Uri imageUri) {
-        // Implement image sending logic here
+    private void uploadImage(Message message) {
+        dbr.push().setValue(message);
     }
 }
