@@ -40,13 +40,16 @@ public class RegisterActivity extends AppCompatActivity {
     ProgressBar progressBar;
     DatabaseReference databaseReference;
     String userID;
-
+    SharedPreferences sharedPreferences;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+        sharedPreferences = getSharedPreferences("mina.txt",MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
 
         mFullName  = findViewById(R.id.fullName);
         mEmail = findViewById(R.id.Email);
@@ -66,6 +69,10 @@ public class RegisterActivity extends AppCompatActivity {
                 String password = mPassword.getText().toString();
                 String fullName = mFullName.getText().toString();
                 String confirmPass = mConfirmPass.getText().toString();
+                // save name and email on shared preferences
+                editor.putString("name",fullName);
+                editor.putString("email",email);
+                editor.apply();
 
                 if (TextUtils.isEmpty(fullName)) {
                     mFullName.setError("Full Name is Required");
